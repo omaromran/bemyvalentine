@@ -1,0 +1,103 @@
+:root {
+  --bg-deep: #7a0019;
+  --bg-bright: #ff3b6b;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-shadow: 0 8px 32px rgba(122, 0, 25, 0.35);
+  --glow: 0 0 24px rgba(255, 59, 107, 0.5);
+  --font-romantic: "Georgia", "Palatino", "Times New Roman", serif;
+  --font-display: "Georgia", "Palatino", serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-romantic);
+  background: linear-gradient(135deg, var(--bg-deep) 0%, #a00028 40%, var(--bg-bright) 100%);
+  background-attachment: fixed;
+  color: #2d0a12;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+/* Big rounded cards, glossy buttons */
+.card {
+  background: var(--card-bg);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow), var(--glow);
+  padding: 1.5rem 2rem;
+  backdrop-filter: blur(8px);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: linear-gradient(180deg, #ff6b8a 0%, #e63950 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(230, 57, 80, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 24px rgba(230, 57, 80, 0.5);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* Progress indicator */
+.progress-text {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Headline */
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Canvas container: responsive scaling */
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
