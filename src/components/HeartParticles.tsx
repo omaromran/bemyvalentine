@@ -273,16 +273,16 @@ export function HeartFireworks({ active }: { active: boolean }) {
             f.stage = 'burst'
             for (let j = 0; j < BURST_HEARTS; j++) {
               const angle = (Math.PI * 2 * j) / BURST_HEARTS + Math.random() * 0.8
-              const speed = 4 + Math.random() * 8
+              const speed = 5 + Math.random() * 10
               f.hearts.push({
                 x: f.x,
                 y: f.y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed - 2,
-                size: 4 + Math.random() * 8,
+                size: 18 + Math.random() * 28,
                 hue: 340 + Math.random() * 25,
                 life: 1,
-                decay: 0.012 + Math.random() * 0.01,
+                decay: 0.01 + Math.random() * 0.008,
               })
             }
           }
