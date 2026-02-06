@@ -1,6 +1,7 @@
 /**
  * Game 3: Word Puzzle — "WOULD YOU BE MY VALENTINE?"
- * Letter tiles in tray, drag to slots. Hint (max 3), auto-uppercase, snap.
+ * Tap a letter: if it's the next correct letter it goes in place; otherwise "Wrong!" for 0.5s.
+ * Mobile-friendly (no drag required).
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -8,6 +9,7 @@ import { playSparkle } from '../utils/audio'
 
 const PHRASE = 'WOULD YOU BE MY VALENTINE?'
 const MAX_HINTS = 3
+const WRONG_MESSAGE_DURATION_MS = 500
 
 function getTrayLetters(): string[] {
   const letters = PHRASE.replace(/\s/g, '')
@@ -32,10 +34,11 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
   const [slots, setSlots] = useState<{ char: string; index: number }[]>(() => getSlots())
   const [tray, setTray] = useState<string[]>(() => getTrayLetters())
   const [hintsUsed, setHintsUsed] = useState(0)
-  const [dragged, setDragged] = useState<{ from: 'tray'; index: number } | { from: 'slot'; index: number } | null>(null)
   const [won, setWon] = useState(false)
+  const [showWrong, setShowWrong] = useState(false)
 
-  // Run win check after state updates (checkWin in setTimeout was using stale slots/tray)
+  const firstEmptySlotIndex = slots.findIndex((s, i) => s.char === '' && PHRASE[i] !== ' ')
+
   useEffect(() => {
     const correct = PHRASE.split('').every((c, i) => slots[i]?.char === c)
     const trayEmpty = tray.every((c) => c === '')
@@ -46,30 +49,20 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
     }
   }, [slots, tray, won, onWin, soundEnabled])
 
-  const putInSlot = useCallback(
-    (slotIndex: number, char: string) => {
-      if (PHRASE[slotIndex] === ' ') return
-      setSlots((prev) => {
-        const next = prev.map((s, i) =>
-          i === slotIndex ? { ...s, char: char.toUpperCase() } : s
-        )
-        return next
-      })
-      if (dragged?.from === 'tray') {
-        setTray((prev) => prev.map((c, i) => (i === dragged.index ? '' : c)))
-      } else if (dragged?.from === 'slot') {
-        setSlots((prev) => prev.map((s, i) => (i === dragged.index ? { ...s, char: '' } : s)))
-      }
-      setDragged(null)
-    },
-    [dragged]
-  )
-
-  const returnToTray = useCallback((slotIndex: number, char: string) => {
-    setTray((prev) => [...prev.filter((c) => c !== ''), char])
-    setSlots((prev) => prev.map((s, i) => (i === slotIndex ? { ...s, char: '' } : s)))
-    setDragged(null)
-  }, [])
+  const placeLetter = useCallback((char: string, trayIndex: number) => {
+    if (firstEmptySlotIndex === -1) return
+    const expected = PHRASE[firstEmptySlotIndex]
+    if (char.toUpperCase() === expected) {
+      setSlots((prev) =>
+        prev.map((s, i) => (i === firstEmptySlotIndex ? { ...s, char: expected } : s))
+      )
+      setTray((prev) => prev.map((c, i) => (i === trayIndex ? '' : c)))
+    } else {
+      setShowWrong(true)
+      const t = setTimeout(() => setShowWrong(false), WRONG_MESSAGE_DURATION_MS)
+      return () => clearTimeout(t)
+    }
+  }, [firstEmptySlotIndex])
 
   const useHint = useCallback(() => {
     if (hintsUsed >= MAX_HINTS) return
@@ -86,28 +79,6 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
     setHintsUsed((h) => h + 1)
   }, [hintsUsed, slots, tray])
 
-  const handleSlotDrop = useCallback(
-    (e: React.DragEvent, slotIndex: number) => {
-      e.preventDefault()
-      const char = e.dataTransfer.getData('text/plain')
-      if (char && PHRASE[slotIndex] !== ' ') putInSlot(slotIndex, char)
-      setDragged(null)
-    },
-    [putInSlot]
-  )
-
-  const handleTrayDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      if (dragged?.from === 'slot' && dragged.index < slots.length) {
-        const c = slots[dragged.index].char
-        if (c) returnToTray(dragged.index, c)
-      }
-      setDragged(null)
-    },
-    [dragged, slots, returnToTray]
-  )
-
   if (won) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
@@ -117,10 +88,32 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
   }
 
   return (
-    <div className="card" style={{ maxWidth: 520, margin: '0 auto' }}>
+    <div className="card" style={{ maxWidth: 520, margin: '0 auto', position: 'relative' }}>
       <p style={{ marginBottom: '1rem', fontWeight: 700, color: '#7a0019' }}>
-        Guess the phrase — drag letters into place
+        Tap letters in order to spell the phrase
       </p>
+
+      {showWrong && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 20,
+            padding: '1rem 1.5rem',
+            background: 'rgba(200, 0, 50, 0.95)',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: '1.5rem',
+            borderRadius: 16,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          }}
+        >
+          Wrong!
+        </div>
+      )}
+
       <div
         style={{
           display: 'flex',
@@ -133,25 +126,10 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
           background: 'rgba(255,182,193,0.3)',
           borderRadius: 12,
         }}
-        onDragOver={(e) => e.preventDefault()}
       >
         {slots.map((s, i) => (
           <span
             key={i}
-            onDragOver={(e) => {
-              e.preventDefault()
-              e.dataTransfer.dropEffect = 'move'
-            }}
-            onDrop={(e) => handleSlotDrop(e, i)}
-            draggable={s.char !== ' ' && s.char !== ''}
-            onDragStart={(e) => {
-              if (s.char && s.char !== ' ') {
-                e.dataTransfer.setData('text/plain', s.char)
-                e.dataTransfer.effectAllowed = 'move'
-                setDragged({ from: 'slot', index: i })
-              }
-            }}
-            onDragEnd={() => setDragged(null)}
             style={{
               display: 'inline-block',
               width: PHRASE[i] === ' ' ? 12 : 28,
@@ -163,58 +141,56 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
               background: PHRASE[i] === ' ' ? 'transparent' : slots[i].char ? '#ffb6c1' : '#fff',
               border: PHRASE[i] === ' ' ? 'none' : '2px solid #e63950',
               borderRadius: 6,
-              cursor: s.char ? 'grab' : 'default',
             }}
           >
-            {PHRASE[i] === ' ' ? ' ' : slots[i].char || '?'}
+            {PHRASE[i] === ' ' ? '\u00A0' : slots[i].char || '?'}
           </span>
         ))}
       </div>
+
       <div
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: 8,
+          gap: 10,
           justifyContent: 'center',
-          minHeight: 48,
-          padding: '0.5rem',
+          minHeight: 56,
+          padding: '0.75rem',
           background: 'rgba(255,255,255,0.8)',
           borderRadius: 12,
         }}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleTrayDrop}
       >
         {tray.map(
           (c, i) =>
             c && (
-              <span
+              <button
+                type="button"
                 key={`${i}-${c}`}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', c)
-                  e.dataTransfer.effectAllowed = 'move'
-                  setDragged({ from: 'tray', index: i })
-                }}
-                onDragEnd={() => setDragged(null)}
+                onClick={() => placeLetter(c, i)}
                 style={{
-                  width: 32,
-                  height: 40,
-                  lineHeight: '40px',
+                  minWidth: 44,
+                  minHeight: 44,
+                  width: 44,
+                  height: 44,
+                  lineHeight: '44px',
                   textAlign: 'center',
                   fontWeight: 700,
-                  fontSize: 20,
+                  fontSize: 22,
                   background: 'linear-gradient(180deg, #ff6b8a 0%, #e63950 100%)',
                   color: '#fff',
-                  borderRadius: 8,
-                  cursor: 'grab',
+                  border: 'none',
+                  borderRadius: 10,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  cursor: 'pointer',
+                  padding: 0,
                 }}
               >
                 {c}
-              </span>
+              </button>
             )
         )}
       </div>
+
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: '1rem' }}>
         <button
           type="button"
