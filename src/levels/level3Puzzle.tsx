@@ -127,7 +127,7 @@ export function Level3Puzzle({ onWin, soundEnabled }: Level3PuzzleProps) {
           borderRadius: 12,
         }}
       >
-        {slots.map((s, i) => (
+        {slots.map((_, i) => (
           <span
             key={i}
             style={{
