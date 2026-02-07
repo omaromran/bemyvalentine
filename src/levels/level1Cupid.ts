@@ -10,7 +10,7 @@ const FACE_SPEED_X = 120
 const FACE_SPEED_Y = 0
 const SIN_AMPLITUDE = 80
 const SIN_FREQ = 0.8
-const ARROW_SPEED = -520
+const ARROW_SPEED = -780
 const ALEX_BOTTOM_PAD = 14
 
 const HER_IMG = '/images/omar.jpg'
